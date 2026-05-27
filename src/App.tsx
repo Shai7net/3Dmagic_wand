@@ -1,10 +1,11 @@
-import React, { useEffect, useState, useCallback, useRef, Component, ErrorInfo, ReactNode } from 'react';
+import React, { useEffect, useState, useCallback, useRef, ErrorInfo, Component, ReactNode } from 'react';
 import { RefreshCw, Play, Pause } from 'lucide-react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
 
 const ROTATIONS_BEFORE_CHANGE = 3;
 const VIDEOS_COUNT = 6;
+const GLB_URL = 'https://raw.githubusercontent.com/Shai7net/3Dmagic_wand/cbf3312bea165b1763a7f076bbf2d2da32d951db/Dmagic_wand%20model/Dmagic_wand%20model.glb';
 
 class ErrorBoundary extends Component<{children: ReactNode, fallback: ReactNode}, {hasError: boolean}> {
   constructor(props: any) {
@@ -26,21 +27,17 @@ class ErrorBoundary extends Component<{children: ReactNode, fallback: ReactNode}
 }
 
 function MagicWandModel() {
-  // Using try/catch wouldn't work with useGLTF due to Suspense, so we rely on the ErrorBoundary above it
-  const { scene } = useGLTF('https://raw.githubusercontent.com/Shai7net/3Dmagic_wand/main/Dmagic_wand%20model/Dmagic_wand%20model.glb');
+  const { scene } = useGLTF(GLB_URL);
   const wandRef = useRef<any>(null);
 
   useFrame((state) => {
     if (wandRef.current) {
-      // Gentle floating animation
-      wandRef.current.position.y = -1.5 + Math.sin(state.clock.elapsedTime) * 0.1;
-      // Slight continuous rotation
+      wandRef.current.position.y = -3 + Math.sin(state.clock.elapsedTime) * 0.1;
       wandRef.current.rotation.y = state.clock.elapsedTime * 0.2;
     }
   });
 
-  // Position it downwards so the top (or center) is roughly at Y=0
-  return <primitive ref={wandRef} object={scene} scale={[1, 1, 1]} position={[0, -1.5, 0]} />;
+  return <primitive ref={wandRef} object={scene} scale={[2.2, 2.2, 2.2]} position={[0, -3, 0]} />;
 }
 
 export default function App() {
@@ -88,8 +85,19 @@ export default function App() {
   };
 
   return (
-    <div className="relative w-full h-screen bg-neutral-950 overflow-hidden [perspective:1200px]">
+    <div className="relative w-full h-screen bg-[#050300] overflow-hidden [perspective:1200px]">
       
+      {/* Brick texture background */}
+      <div 
+          className="absolute inset-0 z-0 opacity-40 pointer-events-none"
+          style={{
+              backgroundImage: "url('https://www.transparenttextures.com/patterns/brick-wall.png')",
+              backgroundRepeat: 'repeat',
+          }}
+      ></div>
+      {/* Dark vignette effect focusing light in the center */}
+      <div className="absolute inset-0 z-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.85)_60%,rgba(0,0,0,1)_100%)] pointer-events-none"></div>
+
       {/* HUD & Controls */}
       <div className="absolute top-6 left-6 z-50 flex gap-4 pointer-events-none">
          <div className="bg-black/50 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 text-white/50 text-xs font-mono font-medium flex items-center justify-center pointer-events-auto shadow-lg">
@@ -131,7 +139,6 @@ export default function App() {
                         <directionalLight position={[5, 10, 5]} intensity={1.5} />
                         <spotLight position={[-5, 5, -5]} intensity={1} color="#ffc266" />
                         
-                        {/* Auto-rotating Wand for extra flavor, or just static. We keep it static but with a subtle float. */}
                         <ErrorBoundary fallback={null}>
                            <React.Suspense fallback={null}>
                               <MagicWandModel />
