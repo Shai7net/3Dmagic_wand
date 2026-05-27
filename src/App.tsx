@@ -1,8 +1,47 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef, Component, ErrorInfo, ReactNode } from 'react';
 import { RefreshCw, Play, Pause } from 'lucide-react';
+import { Canvas, useFrame } from '@react-three/fiber';
+import { useGLTF } from '@react-three/drei';
 
 const ROTATIONS_BEFORE_CHANGE = 3;
 const VIDEOS_COUNT = 6;
+
+class ErrorBoundary extends Component<{children: ReactNode, fallback: ReactNode}, {hasError: boolean}> {
+  constructor(props: any) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error("ErrorBoundary caught an error", error, errorInfo);
+  }
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback;
+    }
+    return this.props.children;
+  }
+}
+
+function MagicWandModel() {
+  // Using try/catch wouldn't work with useGLTF due to Suspense, so we rely on the ErrorBoundary above it
+  const { scene } = useGLTF('https://raw.githubusercontent.com/Shai7net/3Dmagic_wand/main/Dmagic_wand%20model/Dmagic_wand%20model.glb');
+  const wandRef = useRef<any>(null);
+
+  useFrame((state) => {
+    if (wandRef.current) {
+      // Gentle floating animation
+      wandRef.current.position.y = -1.5 + Math.sin(state.clock.elapsedTime) * 0.1;
+      // Slight continuous rotation
+      wandRef.current.rotation.y = state.clock.elapsedTime * 0.2;
+    }
+  });
+
+  // Position it downwards so the top (or center) is roughly at Y=0
+  return <primitive ref={wandRef} object={scene} scale={[1, 1, 1]} position={[0, -1.5, 0]} />;
+}
 
 export default function App() {
   const [allVideoIds, setAllVideoIds] = useState<string[]>([]);
@@ -79,36 +118,30 @@ export default function App() {
           
           {/* The Magic Stick (Center Anchor at Z=0) */}
           <div 
-            className="absolute flex items-center justify-center pointer-events-none" 
+            className="absolute flex items-center justify-center pointer-events-none w-full h-full" 
             style={{ transform: 'translateZ(0px)' }}
           >
-              {/* Stick Body (Starts perfectly at center, goes down to bottom) */}
-              <div className="absolute top-0 w-8 h-[60vh] mt-[-10px] -translate-x-[2px]">
-                 {/* Realistic gradient and texture with shadow inset for 3D rod effect */}
-                 <div className="absolute inset-0 bg-gradient-to-b from-[#905D28] via-[#4A2D15] to-[#0A0603] rounded-b-[8px] rounded-t-full shadow-[inset_3px_0_8px_rgba(255,215,100,0.4),inset_-5px_0_12px_rgba(0,0,0,0.8),0_0_20px_rgba(255,160,0,0.15)] overflow-hidden">
-                      
-                      {/* Organic wood grain texture overlay */}
-                      <div className="absolute inset-0 opacity-30" style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='200'%3E%3Cpath d='M2 0 Q4 50 2 100 T2 200' fill='none' stroke='%23000' stroke-width='1.5' /%3E%3Cpath d='M6 0 Q8 60 4 120 T6 200' fill='none' stroke='%23000' stroke-width='2' opacity='0.6' /%3E%3C/svg%3E\")", backgroundRepeat: "repeat-y", backgroundSize: "100% 100%"}}></div>
-                      <div className="absolute inset-0 opacity-10 mix-blend-overlay bg-[url('https://www.transparenttextures.com/patterns/wood-pattern.png')]"></div>
-                      
-                      {/* Knots and root details */}
-                      <div className="absolute top-12 -left-1.5 w-8 h-12 rounded-[50%] bg-[#381F0E] shadow-[inset_2px_2px_5px_rgba(0,0,0,0.7),-2px_0_4px_rgba(255,255,255,0.15)] -rotate-3 overflow-hidden">
-                         <div className="absolute inset-1.5 rounded-full border-[0.5px] border-[#180D06]/60"></div>
-                         <div className="absolute inset-3 rounded-full border border-[#180D06]/40"></div>
-                      </div>
-    
-                      <div className="absolute top-44 -right-1.5 w-7 h-10 rounded-[40%] bg-[#2b170a] shadow-[inset_-3px_1px_5px_rgba(0,0,0,0.8),1px_0_3px_rgba(255,255,255,0.1)] rotate-6">
-                          <div className="absolute top-1.5 bottom-1.5 right-1 left-2 rounded-full border-[0.5px] border-black/50"></div>
-                      </div>
-    
-                      <div className="absolute top-72 -left-1 w-5 h-7 rounded-[45%] bg-[#180d05] shadow-[inset_2px_2px_4px_rgba(0,0,0,0.9)] rotate-[15deg]"></div>
-                      
-                      <div className="absolute bottom-32 -right-1 w-5 h-6 rounded-[35%] bg-[#080402] shadow-[inset_-1px_1px_3px_rgba(0,0,0,0.9)] -rotate-6"></div>
-                 </div>
+              {/* 3D Canvas Context for GLB model */}
+              <div className="absolute inset-0 z-0">
+                  <Canvas 
+                    camera={{ position: [0, 0, 6], fov: 50 }} 
+                    gl={{ alpha: true, antialias: true }}
+                  >
+                        <ambientLight intensity={0.8} />
+                        <directionalLight position={[5, 10, 5]} intensity={1.5} />
+                        <spotLight position={[-5, 5, -5]} intensity={1} color="#ffc266" />
+                        
+                        {/* Auto-rotating Wand for extra flavor, or just static. We keep it static but with a subtle float. */}
+                        <ErrorBoundary fallback={null}>
+                           <React.Suspense fallback={null}>
+                              <MagicWandModel />
+                           </React.Suspense>
+                        </ErrorBoundary>
+                  </Canvas>
               </div>
-    
-              {/* Glowing Orb */}
-              <div className="absolute flex items-center justify-center">
+
+              {/* Glowing Orb (Kept for the magic effect, placed over the top of the wand) */}
+              <div className="absolute flex items-center justify-center z-10 transition-transform">
                   {/* Background ambient glow - extremely wide */}
                   <div className="absolute w-[100vw] h-[100vw] max-w-[80rem] max-h-[80rem] bg-amber-600/5 rounded-full blur-[100px] animate-pulse" style={{ animationDuration: '4s' }}></div>
                   {/* Outer massive glow */}
