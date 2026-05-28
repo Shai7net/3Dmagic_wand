@@ -41,22 +41,24 @@ function MagicWandModel() {
 }
 
 export default function App() {
-  const [allVideoIds, setAllVideoIds] = useState<string[]>([]);
+  const DEFAULT_VIDEO_IDS = [
+    "zZ6U0X31278", // Example videos, you can replace these with your actual video IDs!
+    "S_6G8-cI_eI",
+    "G1h-44-pZlM",
+    "rP77bHiyV18",
+    "Z0x0M-qHjZ4",
+    "2Q24T8vKzbw"
+  ];
+  
+  const [allVideoIds, setAllVideoIds] = useState<string[]>(DEFAULT_VIDEO_IDS);
   const [displayedVideos, setDisplayedVideos] = useState<string[]>([]);
   const [rotationCount, setRotationCount] = useState(0);
   const [isRotating, setIsRotating] = useState(true);
 
   const fetchVideos = async () => {
-    try {
-      const res = await fetch('/api/videos');
-      const data = await res.json();
-      if (data.videoIds && data.videoIds.length > 0) {
-        setAllVideoIds(data.videoIds);
-        pickRandomVideos(data.videoIds);
-      }
-    } catch (err) {
-      console.error("Failed to fetch video ids", err);
-    }
+    // In a completely static environment, we don't have an API. 
+    // We just rely on the fallback IDs to populate the carousel immediately.
+    pickRandomVideos(DEFAULT_VIDEO_IDS);
   };
 
   useEffect(() => {
