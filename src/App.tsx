@@ -5,7 +5,7 @@ import { useGLTF } from '@react-three/drei';
 
 const ROTATIONS_BEFORE_CHANGE = 3;
 const VIDEOS_COUNT = 6;
-const GLB_URL = 'https://raw.githubusercontent.com/Shai7net/3Dmagic_wand/cbf3312bea165b1763a7f076bbf2d2da32d951db/Dmagic_wand%20model/Dmagic_wand%20model.glb';
+const GLB_URL = './Dmagic_wand_model.glb';
 
 class ErrorBoundary extends Component<{children: ReactNode, fallback: ReactNode}, {hasError: boolean}> {
   constructor(props: any) {
@@ -190,13 +190,21 @@ export default function App() {
                 >
                   <div className="w-full h-full p-2 bg-gradient-to-br from-amber-500/30 to-black/90 rounded-xl border border-amber-900/50 backdrop-blur-md">
                     <div className="w-full h-full rounded-lg overflow-hidden bg-black object-cover relative pointer-events-auto">
-                        <div className="absolute inset-0 z-10 bg-transparent group-hover:bg-black/10 transition-colors pointer-events-none"></div>
-                        <iframe 
-                            className="w-full h-full border-none pointer-events-auto"
-                            src={`https://www.youtube.com/embed/${id}?autoplay=1&mute=1&loop=1&playlist=${id}&controls=0`}
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                            allowFullScreen
-                            title={`YouTube video ${id}`}
+                        <div className="absolute inset-0 z-10 bg-transparent group-hover:bg-amber-500/20 transition-colors pointer-events-none mix-blend-overlay"></div>
+                        <img 
+                            className="w-full h-full object-cover border-none cursor-pointer"
+                            src={`https://img.youtube.com/vi/${id}/hqdefault.jpg`}
+                            alt={`YouTube video ${id}`}
+                            onClick={() => {
+                                // Inform parent site
+                                if (typeof (window as any).openShot3Video === 'function') {
+                                    (window as any).openShot3Video(`https://www.youtube.com/watch?v=${id}`, "Video");
+                                } else {
+                                    window.dispatchEvent(new CustomEvent("shot3:open-video", { 
+                                        detail: { url: `https://www.youtube.com/watch?v=${id}`, title: "Video" } 
+                                    }));
+                                }
+                            }}
                         />
                     </div>
                   </div>
